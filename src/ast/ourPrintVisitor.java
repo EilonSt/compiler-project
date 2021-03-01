@@ -1,6 +1,8 @@
+
+
 package ast;
 
-public class AstPrintVisitor implements Visitor {
+public class ourPrintVisitor implements Visitor {
     private StringBuilder builder = new StringBuilder();
 
     private int indent = 0;
@@ -30,6 +32,8 @@ public class AstPrintVisitor implements Visitor {
         program.mainClass().accept(this);
         builder.append("\n");
         for (ClassDecl classdecl : program.classDecls()) {
+            builder.append(classdecl.enclosingScope().toPrint());
+            builder.append("\n");
             classdecl.accept(this);
             builder.append("\n");
         }
@@ -51,6 +55,8 @@ public class AstPrintVisitor implements Visitor {
             builder.append("\n");
         }
         for (var methodDecl : classDecl.methoddecls()) {
+            builder.append(methodDecl.enclosingScope().toPrint());
+            builder.append("\n");
             methodDecl.accept(this);
             builder.append("\n");
         }
@@ -78,6 +84,7 @@ public class AstPrintVisitor implements Visitor {
 
     @Override
     public void visit(MethodDecl methodDecl) {
+
         appendWithIndent("");
         methodDecl.returnType().accept(this);
         builder.append(" ");

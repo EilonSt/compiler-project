@@ -1,5 +1,5 @@
 /***************************/
-/* Based on a template by Oren Ish-Shalom */
+/* FILE NAME: LEX_FILE.lex */
 /***************************/
 
 /*************/
@@ -63,13 +63,6 @@ import java_cup.runtime.*;
 /***********************/
 /* MACRO DECALARATIONS */
 /***********************/
-InputCharacter 				= [^\r\n]
-LineTerminator 				= \r|\n|\r\n
-WhiteSpace 					= {LineTerminator} | [ \t\f]
-ID 					= [a-zA-Z][a-zA-Z0-9_]*
-INTEGER				= 0 | [1-9][0-9]*
-SingleLineComment 			= "//" {InputCharacter}* {LineTerminator}?
-LongComment 			= "/*" [^*] ~"*/" | "/*" "*"+ "/"
 
 /******************************/
 /* DOLAR DOLAR - DON'T TOUCH! */
@@ -88,47 +81,6 @@ LongComment 			= "/*" [^*] ~"*/" | "/*" "*"+ "/"
 /**************************************************************/
 
 <YYINITIAL> {
-"public"            	{ return symbol(sym.PUBLIC); }
-"static" 				{ return symbol(sym.STATIC); }
-"void"					{ return symbol(sym.VOID); }
-"main"					{ return symbol(sym.MAIN); }
-"String"				{ return symbol(sym.STRING); }
-"class"					{ return symbol(sym.CLASS); }
-"extends"				{ return symbol(sym.EXTENDS); }
-"new"					{ return symbol(sym.NEW); }
-"length"				{ return symbol(sym.LENGTH); }
-"return"				{ return symbol(sym.RETURN); }
-"System.out.println" 	{ return symbol(sym.PRINTLN); }
-"if"					{ return symbol(sym.IF); }
-"else"             		{ return symbol(sym.ELSE); }
-"while"					{ return symbol(sym.WHILE); }
-"int"					{ return symbol(sym.INT); }
-"boolean"				{ return symbol(sym.BOOLEAN); }
-"this"					{ return symbol(sym.THIS); }
-"true"					{ return symbol(sym.TRUE); }
-"false"					{ return symbol(sym.FALSE); }
-"+"						{ return  symbol(sym.PLUS); }
-"-"						{ return symbol(sym.MINUS); }
-"*"						{ return symbol(sym.MULT); }
-"!"						{ return symbol(sym.NOT); }
-"<"						{ return symbol(sym.LT); }
-"&&"					{ return symbol(sym.AND); }
-"="						{ return  symbol(sym.ASSIGN); }
-"."						{ return symbol(sym.DOT); }
-","						{ return symbol(sym.COMMA); }
-";"						{ return symbol(sym.SEMICOLON); }
-"("						{ return symbol(sym.LPAREN); }
-")"						{ return symbol(sym.RPAREN); }
-"["						{ return symbol(sym.LSQUARE); }
-"]"						{ return symbol(sym.RSQUARE); }
-"{"						{ return symbol(sym.LCURLY); }
-"}"						{ return symbol(sym.RCURLY); }
-{ID}				    { return symbol(sym.ID, new String(yytext())); }
-{INTEGER}			    { return symbol(sym.NUMBER, Integer.parseInt(yytext())); }
-{WhiteSpace}            { /*  do nothing  */ }
-<<EOF>>				    { return symbol(sym.EOF); }
-{LongComment}           { /*  do nothing */ }
-{SingleLineComment}		{ /*  do nothing  */ }
+"public"            { return symbol(sym.PUBLIC); }
+<<EOF>>				{ return symbol(sym.EOF); }
 }
-
-[^]                     { throw new Error("Illegal character <"+ yytext() + ">"); }

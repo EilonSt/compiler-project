@@ -4,9 +4,14 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlElements;
 import java.util.List;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 public class MethodDecl extends AstNode {
-    private int cnt = 0;
+    //private ArrayList<String> staticSignature;
+    //private HashMap<String,ArrayList<String>> varsTypeInit;
+    private HashMap<String,String> formalsType;
+    
 
     @XmlElement(required = true)
     private AstTypeWrapper returnType;
@@ -37,7 +42,10 @@ public class MethodDecl extends AstNode {
 
     // for deserialization only!
     public MethodDecl() {
-
+        //this.staticSignature = new ArrayList<String>();
+        //this.varsTypeInit = new HashMap<String,ArrayList<String>>();
+        this.formalsType = new HashMap<String,String>();
+        
     }
 
     public MethodDecl(AstType returnType, String name,
@@ -51,19 +59,22 @@ public class MethodDecl extends AstNode {
         this.vardecls = vardecls;
         this.body = body;
         this.ret = new ExprWrapper(ret);
+        //this.staticSignature = new ArrayList<String>();
+        //this.varsTypeInit = new HashMap<String,ArrayList<String>>();
+        this.formalsType = new HashMap<String,String>();
     }
-    public MethodDecl(AstType returnType, String name,
-                      List<FormalArg> formals, List<VarDecl> vardecls, List<Statement> body, Expr ret) {
-        // lineNumber = null means it won't be marshaled to the XML
-        super(0);
-        cnt++;
-        this.returnType = new AstTypeWrapper(returnType);
-        this.name = name;
-        this.formals = formals;
-        this.vardecls = vardecls;
-        this.body = body;
-        this.ret = new ExprWrapper(ret);
+    public HashMap<String,String> formalsType(){
+        return this.formalsType;
     }
+    /*
+    public ArrayList<String> staticSignature(){
+        return this.staticSignature;
+    }*/
+
+    /*
+    public HashMap<String,ArrayList<String>> varsTypeInit(){
+        return this.varsTypeInit;
+    }*/
 
     @Override
     public void accept(Visitor v) {
@@ -97,4 +108,6 @@ public class MethodDecl extends AstNode {
     public Expr ret() {
         return ret.e;
     }
+
+
 }
