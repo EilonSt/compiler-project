@@ -1,0 +1,187 @@
+/*************/
+/* IMPORTS */
+/*************/
+
+import java_cup.runtime.*;
+import ast.*;
+import java.util.*;
+
+
+parser code
+{:
+	public Lexer lexer;
+  	public static int errors = 0;
+	public Parser(Lexer lexer)
+	{
+		super(lexer);
+		this.lexer = lexer;
+	}
+	public void report_error(String message, Object info)
+	{
+		
+    	System.err.print("Syntax error at line " + lexer.getLine() + " of input.\n");
+		System.exit(1);
+	}
+:}
+
+/************************/
+/* CUSTOMIZE CUP PARSER */
+/************************/
+scan with
+{:
+	Symbol s;
+    try {
+	s = lexer.next_token();
+	return s;
+     } catch (java.lang.Error e) {
+         System.err.print("Syntax error at line " + lexer.getLine() + " of input.\n");
+         System.exit(1);
+         return null;
+     }
+:};
+
+/*************/
+/* TERMINALS */
+/*************/
+
+terminal  MULT, MINUS, PLUS;
+terminal  LPAREN, RPAREN, LSQUARE, RSQUARE, LCURLY, RCURLY;
+terminal  DOT, COMMA, SEMICOLON;
+terminal  AND, LT, NOT, TRUE, FALSE;
+terminal  IF, ELSE, WHILE;
+terminal  ASSIGN, THIS;
+terminal  INT, BOOLEAN;
+terminal  PUBLIC, STATIC, VOID, MAIN, STRING;
+terminal  CLASS, EXTENDS, NEW;
+terminal  LENGTH, RETURN, PRINTLN;
+terminal String ID;
+terminal int NUMBER;
+
+/*****************/
+/* NON TERMINALS */
+/*****************/
+
+non terminal Program prog;
+non terminal MainClass mainClass;
+non terminal ClassDecl classDecl;
+non terminal VarDecl varDecl;
+non terminal MethodDecl methodDecl;
+non terminal AstType type;
+non terminal Statement statement;
+non terminal Expr expr;
+non terminal LinkedList<Expr> exprList;
+non terminal LinkedList<ClassDecl> classDeclList;
+non terminal LinkedList<MethodDecl> methodDeclList;
+non terminal LinkedList<VarDecl> varDeclList;
+non terminal LinkedList<FormalArg> formalList;
+non terminal LinkedList<Statement> stmtList;
+
+/***********************/
+/* OPERATOR PRECEDENCE */
+/***********************/
+precedence left ASSIGN;
+precedence left AND;
+precedence left LT;
+precedence left PLUS, MINUS;
+precedence left MULT;
+precedence left NOT;
+precedence left LSQUARE;
+precedence left DOT;
+/************************/
+/* INITIAL NON TERMINAL */
+/************************/
+start with prog;
+
+/********************/
+/* PRODUCTION RULES */
+/********************/
+
+prog ::= mainClass:main_class classDeclList:class_decls  {: RESULT = new Program(main_class, class_decls); :};
+
+mainClass ::= CLASS ID:class_name LCURLY PUBLIC STATIC VOID MAIN LPAREN STRING LSQUARE RSQUARE ID:args_name RPAREN LCURLY statement:main_stmt RCURLY RCURLY
+			  {: RESULT = new MainClass(class_name, args_name, main_stmt); :}
+;
+			  
+classDecl ::= CLASS ID:class_name LCURLY varDeclList:fields methodDeclList:methods RCURLY {: RESULT = new ClassDecl(class_name, fields, methods); :}
+				| CLASS ID:class_name EXTENDS ID:super_class_name LCURLY varDeclList:fields methodDeclList:methods RCURLY
+				{: RESULT = new ClassDecl(class_name, super_class_name, fields, methods); :}
+;
+			  
+classDeclList ::= classDecl:cd classDeclList:cds {: if(cds == null) cds = new LinkedList<ClassDecl>(); cds.addFirst(cd); RESULT = cds; :}
+					| {: RESULT = new LinkedList<ClassDecl>(); :}
+;
+			  
+varDecl ::= type:t ID:var_name SEMICOLON {: RESULT = new VarDecl(t, var_name); :};
+				
+varDeclList ::= varDeclList:vds varDecl:vd {: if(vds == null) vds = new LinkedList<VarDecl>(); vds.add(vd); RESULT = vds; :}
+				|{: RESULT = new LinkedList<VarDecl>(); :}
+;
+
+methodDecl ::= PUBLIC type:ret_type ID:method_name LPAREN RPAREN LCURLY varDeclList:vds stmtList:stmts RETURN expr:e SEMICOLON RCURLY
+				{: LinkedList<FormalArg> formals_list = new LinkedList<FormalArg>(); RESULT = new MethodDecl(ret_type, method_name, formals_list, vds, stmts, e); :}
+				| PUBLIC type:ret_type ID:method_name LPAREN type:formal_type ID:formal_id formalList:formals RPAREN LCURLY varDeclList:vds stmtList:stmts RETURN expr:e SEMICOLON RCURLY
+				{: 
+				FormalArg formal = new FormalArg(formal_type, formal_id);
+				if (formals == null) formals = new LinkedList<FormalArg>();
+				formals.addFirst(formal);
+				RESULT = new MethodDecl(ret_type, method_name, formals, vds, stmts, e);
+				:}
+;
+						
+methodDeclList ::= methodDecl:md methodDeclList:mds {: if(mds == null) mds = new LinkedList<MethodDecl>(); mds.addFirst(md); RESULT = mds; :}
+					| {: RESULT = new  LinkedList<MethodDecl>(); :}
+;
+
+formalList ::= COMMA type:t ID:formal_name formalList:formals {:
+				FormalArg formal = new FormalArg(t, formal_name);
+ 				if(formals == null) formals = new LinkedList<FormalArg>();
+				formals.addFirst(formal);
+				RESULT = formals;
+			  	:}
+			  | {: RESULT = new LinkedList<FormalArg>(); :}
+;
+						
+type ::= INT LSQUARE RSQUARE {: RESULT = new IntArrayAstType(); :}
+		 | INT {: RESULT = new IntAstType(); :}
+		 | BOOLEAN {: RESULT = new BoolAstType(); :}
+		 | ID:id {: RESULT = new RefType(id); :}
+;
+		 
+statement ::= LCURLY stmtList:stmts RCURLY {: RESULT = new BlockStatement(stmts); :}
+			  | IF LPAREN expr:e RPAREN statement:s1 ELSE statement:s2 {: RESULT = new IfStatement(e, s1, s2); :}
+			  | WHILE LPAREN expr:e RPAREN statement:s {: RESULT = new WhileStatement(e, s); :}
+			  | PRINTLN LPAREN expr:e RPAREN SEMICOLON {: RESULT = new SysoutStatement(e); :}
+			  | ID:id ASSIGN expr:e SEMICOLON {: RESULT = new AssignStatement(id, e); :}
+			  | ID:id LSQUARE expr:e1 RSQUARE ASSIGN expr:e2 SEMICOLON {: RESULT = new AssignArrayStatement(id, e1, e2); :}
+;
+
+stmtList ::= statement:stmt stmtList:stmts {: if(stmts == null) stmts = new LinkedList<Statement>(); stmts.addFirst(stmt); RESULT = stmts; :}
+			| {: RESULT = new LinkedList<Statement>(); :}
+;
+
+expr ::= expr:e1 AND expr:e2 {: RESULT = new AndExpr(e1, e2); :}
+		| expr:e1 LT expr:e2 {: RESULT = new LtExpr(e1, e2); :}
+		| expr:e1 PLUS expr:e2 {: RESULT = new AddExpr(e1, e2); :}
+		| expr:e1 MINUS expr:e2 {: RESULT = new SubtractExpr(e1, e2); :}
+		| expr:e1 MULT expr:e2 {: RESULT = new MultExpr(e1, e2); :}
+		| expr:e1 LSQUARE expr:e2 RSQUARE {: RESULT = new ArrayAccessExpr(e1, e2); :}
+		| expr:e DOT LENGTH {: RESULT = new ArrayLengthExpr(e); :}
+		| expr:owner_object DOT ID:method_name LPAREN RPAREN 
+		{:LinkedList<Expr> actuals = new LinkedList<Expr>(); RESULT = new MethodCallExpr(owner_object, method_name, actuals); :}
+		| expr:owner_object DOT ID:method_name LPAREN expr:actual exprList:actuals RPAREN
+		{: actuals.addFirst(actual); RESULT = new MethodCallExpr(owner_object, method_name, actuals);:}
+		| NUMBER:n {: RESULT = new IntegerLiteralExpr(n); :}
+		| TRUE {: RESULT = new TrueExpr(); :}
+		| FALSE {: RESULT = new FalseExpr(); :}
+		| ID:id {: RESULT = new IdentifierExpr(id); :}
+		| THIS {: RESULT = new ThisExpr(); :}
+		| NEW INT LSQUARE expr:e RSQUARE {: RESULT = new NewIntArrayExpr(e); :}
+		| NEW ID:id LPAREN RPAREN {: RESULT = new NewObjectExpr(id); :}
+		| NOT expr:e {: RESULT = new NotExpr(e); :}
+		| LPAREN expr:e RPAREN {: RESULT = e; :}
+;
+
+exprList ::= COMMA expr:e exprList:explst {: if(explst == null) explst = new LinkedList<Expr>(); explst.addFirst(e); RESULT = explst; :}
+			| {: RESULT = new LinkedList<Expr>(); :}
+;
+				
